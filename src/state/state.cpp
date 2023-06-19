@@ -13,75 +13,29 @@
  */
 int State::evaluate(){
   // [TODO] design your own evaluation function
-  int sum[2] = {0}, cnt;
-  if(!player){ // white's turn
-    cnt = 0; // white board
-    for(int i = 0; i<5; i++){
-      for(int j = 0; j<5; j++){
-        int cur = board.board[0][i][j];
-        if(cur){
-          cnt++; sum[0]+=cur;
-          if(cur == 6) sum[0]+=king(0, 0, i, j);
-          else if(cur == 5) sum[0]+=queen(0, 0, i, j);
-          else if(cur == 4) sum[0]+=bishop(0, 0, i, j);
-          else if(cur == 3) sum[0]+=knight(0, 0, i, j);
-          else if(cur == 2) sum[0]+=rook(0, 0, i, j);
-          else if(cur == 1) sum[0]+=pawn(0, 0, i, j);
-          if(cnt == ws) break;
+  int sum[2] = {0}, cnt[2] = {0};
+  for(int i = 0; i<5; i++){ // white board
+    for(int j = 0; j<5; j++){
+      int cur = board.board[0][i][j];
+      if(cur){
+        cnt[0]++; sum[0]+=cur; // count
+        // black's turn, count threat and protection
+        if(player) sum[0]+=threat(1, cur, i, j);
+        else{ // white turn, count chance
+          if(cur == 6){ // king still count threat
+            int tmp = threat(1, cur, i, j);
+            if(tmp == -100000) return tmp;
+            sum[0]+=tmp;
+          } sum[0]-=threat(0, cur, i, j);
         }
-      }
-    }
-    cnt = 0; // black board
-    for(int i = 0; i<5; i++){
-      for(int j = 0; j<5; j++){
-        int cur = board.board[1][i][j];
-        if(cur){
-          cnt++; sum[1]+=cur;
-          if(cur == 6) sum[1]+=king(0, 1, i, j);
-          else if(cur == 5) sum[1]+=queen(0, 1, i, j);
-          else if(cur == 4) sum[1]+=bishop(0, 1, i, j);
-          else if(cur == 3) sum[1]+=knight(0, 1, i, j);
-          else if(cur == 2) sum[1]+=rook(0, 1, i, j);
-          else if(cur == 1) sum[1]+=pawn(0, 1, i, j);
-          if(cnt == ws) break;
-        }
-      }
-    }
-  } else{ // black's turn
-    cnt = 0; // white board
-    for(int i = 0; i<5; i++){
-      for(int j = 0; j<5; j++){
-        int cur = board.board[0][i][j];
-        if(cur){
-          cnt++; sum[0]+=cur;
-          if(cur == 6) sum[0]+=king(0, 0, i, j);
-          else if(cur == 5) sum[0]+=queen(0, 0, i, j);
-          else if(cur == 4) sum[0]+=bishop(0, 0, i, j);
-          else if(cur == 3) sum[0]+=knight(0, 0, i, j);
-          else if(cur == 2) sum[0]+=rook(0, 0, i, j);
-          else if(cur == 1) sum[0]+=pawn(0, 0, i, j);
-          if(cnt == ws) break;
-        }
-      }
-    }
-    cnt = 0; // black board
-    for(int i = 0; i<5; i++){
-      for(int j = 0; j<5; j++){
-        int cur = board.board[1][i][j];
-        if(cur){
-          cnt++; sum[1]+=cur;
-          if(cur == 6) sum[1]+=king(0, 1, i, j);
-          else if(cur == 5) sum[1]+=queen(0, 1, i, j);
-          else if(cur == 4) sum[1]+=bishop(0, 1, i, j);
-          else if(cur == 3) sum[1]+=knight(0, 1, i, j);
-          else if(cur == 2) sum[1]+=rook(0, 1, i, j);
-          else if(cur == 1) sum[1]+=pawn(0, 1, i, j);
-          if(cnt == ws) break;
-        }
-      }
-    }
+      } // black board count
+      cur = board.board[1][i][j];
+      if(cur){
+        cnt[1]++; sum[1]+=cur;
+      } if(cnt[0] == ws && cnt[0] == bs) break;
+    } 
   }
-
+  
   return sum[0] - sum[1];
 }
 
@@ -297,16 +251,12 @@ std::string State::encode_output(){
     for(int j=0; j<BOARD_W; j+=1){
       if((now_piece = this->board.board[0][i][j])){
         ss << std::string(piece_table[0][now_piece]);
-      }else if((now_piece = this->board.board[1][i][j])){
+      } else if((now_piece = this->board.board[1][i][j])){
         ss << std::string(piece_table[1][now_piece]);
-      }else{
-        ss << " ";
-      }
+      } else ss << " ";
       ss << " ";
-    }
-    ss << "\n";
-  }
-  return ss.str();
+    } ss << "\n";
+  } return ss.str();
 }
 
 
@@ -324,10 +274,123 @@ std::string State::encode_state(){
       for(int j=0; j<BOARD_W; j+=1){
         ss << int(this->board.board[pl][i][j]);
         ss << " ";
-      }
-      ss << "\n";
+      } ss << "\n";
+    } ss << "\n";
+  } return ss.str();
+}
+
+int State::threat(int turn, int num, int x, int y){
+  int sum = 0;
+  // knight threat
+  int kn[2][8] = {{1, -1, 1, -1, 2, -2, 2, -2}, {-2, -2, 2, 2, -1, -1, 1, 1}};
+  for(int i = 0; i<8; i++){
+    int cur = board.board[turn][x+kn[0][i]][y+kn[1][i]];
+    if(cur == 3){
+      if(num == 6) return -100000;
+      else sum-=(num*num);
     }
-    ss << "\n";
   }
-  return ss.str();
+  // check left front, right front
+  int tmp = board.board[(turn+1)%2][x-1][y+1];
+  if(tmp) sum++;
+  else{
+    tmp = board.board[turn][x-1][y+1];
+    if(tmp == 1 || tmp == 2 || tmp == 5){
+      if(num == 6) return -100000;
+      else sum-=(num*num);
+    }
+  }
+  tmp = board.board[(turn+1)%2][x-1][y-1];
+  if(tmp) sum++;
+  else{
+    tmp = board.board[turn][x-1][y-1];
+    if(tmp == 1 || tmp == 2 || tmp == 5){
+      if(num == 6) return -100000;
+      else sum-=(num*num);
+    }
+  }
+  // vertical threat and protection
+  for(int i = y; i<5; i++){
+    int cur0 = board.board[(turn+1)%2][x][i];
+    int cur1 = board.board[turn][x][i];
+    if(cur0){
+      sum++; break;
+    } else if(cur1 == 2 || cur1 == 5){
+      if(num == 6) return -100000;
+      else sum-=(num*num);
+    }
+  }
+  for(int i = y; 0 <= i; i--){
+    int cur0 = board.board[(turn+1)%2][x][i];
+    int cur1 = board.board[turn][x][i];
+    if(cur0){
+      sum++; break;
+    } else if(cur1 == 2 || cur1 == 5){
+      if(num == 6) return -100000;
+      else sum-=(num*num);
+    }
+  }
+  // horizontal threat and protection
+  for(int i = x; i<5; i++){
+    int cur0 = board.board[(turn+1)%2][i][y];
+    int cur1 = board.board[turn][i][y];
+    if(cur0){
+      sum++; break;
+    } else if(cur1 == 2 || cur1 == 5){
+      if(num == 6) return -100000;
+      else sum-=(num*num);
+    }
+  }
+  for(int i = x; 0 <= i; i--){
+    int cur0 = board.board[(turn+1)%2][i][y];
+    int cur1 = board.board[turn][i][y];
+    if(cur0){
+      sum++; break;
+    } else if(cur1 == 2 || cur1 == 5){
+      if(num == 6) return -100000;
+      else sum-=(num*num);
+    }
+  }
+  // diagnal threat and protection
+  for(int i = 1; 0 <= x-i && y+i < 5; i++){
+    int cur0 = board.board[(turn+1)%2][i][y];
+    int cur1 = board.board[turn][i][y];
+    if(cur0){
+      sum++; break;
+    } else if(cur1 == 4 || cur1 == 5){
+      if(num == 6) return -100000;
+      else sum-=(num*num);
+    }
+  }
+  for(int i = 1; 0 <= x-i && 0 <= y-i; i++){
+    int cur0 = board.board[(turn+1)%2][i][y];
+    int cur1 = board.board[turn][i][y];
+    if(cur0){
+      sum++; break;
+    } else if(cur1 == 4 || cur1 == 5){
+      if(num == 6) return -100000;
+      else sum-=(num*num);
+    }
+  }
+  for(int i = 0; x+i < 5 && y+i < 5; i++){
+    int cur0 = board.board[(turn+1)%2][i][y];
+    int cur1 = board.board[turn][i][y];
+    if(cur0){
+      sum++; break;
+    } else if(cur1 == 4 || cur1 == 5){
+      if(num == 6) return -100000;
+      else sum-=(num*num);
+    }
+  }
+  for(int i = 0; x+i < 5 && 0 <= y-i; i++){
+    int cur0 = board.board[(turn+1)%2][i][y];
+    int cur1 = board.board[turn][i][y];
+    if(cur0){
+      sum++; break;
+    } else if(cur1 == 4 || cur1 == 5){
+      if(num == 6) return -100000;
+      else sum-=(num*num);
+    }
+  } 
+  return sum;
 }
