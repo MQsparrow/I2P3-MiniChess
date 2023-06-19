@@ -55,7 +55,8 @@ class State{
     State(Board board, int player): board(board), player(player){};
     
     int evaluate();
-    int threat(int threat, int num, int x, int y);
+    int mobile(int px, int py, int cur, char board[2][6][5], int player);
+    bool can(int x, int y);
     State* next_state(Move move);
     void get_legal_actions();
     std::string encode_output();
