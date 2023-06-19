@@ -13,7 +13,76 @@
  */
 int State::evaluate(){
   // [TODO] design your own evaluation function
-  return 0;
+  int sum[2] = {0}, cnt;
+  if(!player){ // white's turn
+    cnt = 0; // white board
+    for(int i = 0; i<5; i++){
+      for(int j = 0; j<5; j++){
+        int cur = board.board[0][i][j];
+        if(cur){
+          cnt++; sum[0]+=cur;
+          if(cur == 6) sum[0]+=king(0, 0, i, j);
+          else if(cur == 5) sum[0]+=queen(0, 0, i, j);
+          else if(cur == 4) sum[0]+=bishop(0, 0, i, j);
+          else if(cur == 3) sum[0]+=knight(0, 0, i, j);
+          else if(cur == 2) sum[0]+=rook(0, 0, i, j);
+          else if(cur == 1) sum[0]+=pawn(0, 0, i, j);
+          if(cnt == ws) break;
+        }
+      }
+    }
+    cnt = 0; // black board
+    for(int i = 0; i<5; i++){
+      for(int j = 0; j<5; j++){
+        int cur = board.board[1][i][j];
+        if(cur){
+          cnt++; sum[1]+=cur;
+          if(cur == 6) sum[1]+=king(0, 1, i, j);
+          else if(cur == 5) sum[1]+=queen(0, 1, i, j);
+          else if(cur == 4) sum[1]+=bishop(0, 1, i, j);
+          else if(cur == 3) sum[1]+=knight(0, 1, i, j);
+          else if(cur == 2) sum[1]+=rook(0, 1, i, j);
+          else if(cur == 1) sum[1]+=pawn(0, 1, i, j);
+          if(cnt == ws) break;
+        }
+      }
+    }
+  } else{ // black's turn
+    cnt = 0; // white board
+    for(int i = 0; i<5; i++){
+      for(int j = 0; j<5; j++){
+        int cur = board.board[0][i][j];
+        if(cur){
+          cnt++; sum[0]+=cur;
+          if(cur == 6) sum[0]+=king(0, 0, i, j);
+          else if(cur == 5) sum[0]+=queen(0, 0, i, j);
+          else if(cur == 4) sum[0]+=bishop(0, 0, i, j);
+          else if(cur == 3) sum[0]+=knight(0, 0, i, j);
+          else if(cur == 2) sum[0]+=rook(0, 0, i, j);
+          else if(cur == 1) sum[0]+=pawn(0, 0, i, j);
+          if(cnt == ws) break;
+        }
+      }
+    }
+    cnt = 0; // black board
+    for(int i = 0; i<5; i++){
+      for(int j = 0; j<5; j++){
+        int cur = board.board[1][i][j];
+        if(cur){
+          cnt++; sum[1]+=cur;
+          if(cur == 6) sum[1]+=king(0, 1, i, j);
+          else if(cur == 5) sum[1]+=queen(0, 1, i, j);
+          else if(cur == 4) sum[1]+=bishop(0, 1, i, j);
+          else if(cur == 3) sum[1]+=knight(0, 1, i, j);
+          else if(cur == 2) sum[1]+=rook(0, 1, i, j);
+          else if(cur == 1) sum[1]+=pawn(0, 1, i, j);
+          if(cnt == ws) break;
+        }
+      }
+    }
+  }
+
+  return sum[0] - sum[1];
 }
 
 

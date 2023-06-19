@@ -46,6 +46,7 @@ class State{
     GameState game_state = UNKNOWN;
     Board board;
     int player = 0;
+    int ws, bs;
     std::vector<Move> legal_actions;
     
     State(){};
@@ -58,6 +59,13 @@ class State{
     void get_legal_actions();
     std::string encode_output();
     std::string encode_state();
+private:
+    int king(int turn, int player, int x, int y);
+    int queen(int turn, int player, int x, int y);
+    int bishop(int turn, int player, int x, int y);
+    int knight(int turn, int player, int x, int y);
+    int rook(int turn, int player, int x, int y);
+    int pawn(int turn, int player, int x, int y);
 };
 
 #endif
