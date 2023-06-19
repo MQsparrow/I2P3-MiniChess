@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <climits>
 
 #include "../config.hpp"
 #include "../state/state.hpp"
@@ -42,7 +43,7 @@ void write_valid_spot(std::ofstream& fout) {
   // Keep updating the output until getting killed.
   while(true) {
     // Choose a random spot.
-    auto move = MiniMax::get_move(root, 0);
+    auto move = MiniMax::get_move(root, 6);
     fout << move.first.first << " " << move.first.second << " "\
          << move.second.first << " " << move.second.second << std::endl;
     

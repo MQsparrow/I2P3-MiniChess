@@ -1,4 +1,5 @@
 #include <cstdlib>
+#include <climits>
 
 #include "../state/state.hpp"
 #include "./MiniMax.hpp"
@@ -41,11 +42,11 @@ Move MiniMax::get_move(State *state, int depth){
   if(!state->legal_actions.size())
     state->get_legal_actions();
   auto actions = state->legal_actions;
-  int ans, cnt = 0;
-  int cmp = state->player?INT_MIN:INT_MAX; 
+  int ans = 0, cnt = 0;
+  int cmp = !state->player?INT_MIN:INT_MAX; 
   for(auto& i: actions){
     auto tmp = state->next_state(i);
-    int val = minimax(tmp, 4, !state->player);
+    int val = minimax(tmp, depth, !state->player);
     if(state->player && cmp > val){
         ans = cnt; cmp =  val;
     } else if(!state->player && cmp < val){
