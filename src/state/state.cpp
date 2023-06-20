@@ -1,6 +1,7 @@
 #include <iostream>
 #include <sstream>
 #include <cstdint>
+#include <climits>
 
 #include "./state.hpp"
 #include "../config.hpp"
@@ -11,146 +12,104 @@
  * @return int
  */
 
-bool State::can(int x, int y)
-{
+bool State::can(int x, int y){
   return (0 <= x && x < 6 && 0 <= y && y < 5);
 }
 
-int State::mobile(int px, int py, int cur, char board[2][6][5], int player)
-{
+int State::mobile(int px, int py, int cur, char board[2][6][5], int player){
   int sum = 0;
-  if (cur == 1)
-  { // Pawn
+  if(cur == 1){ // Pawn
     int dir = player ? -1 : 1;
     int x = px + dir, y = py;
-    if (can(x, y) && !board[x][y])
-      sum++;
-    if (can(x, y - 1) && !board[player][x][y - 1] && board[player][x][y - 1] != cur)
-      sum++;
-    if (can(x, y + 2) && !board[player][x][y + 2] && board[player][x][y + 2] != cur)
-      sum++;
+    if(can(x, y) && !board[x][y]) sum++;
+    if(can(x, y - 1) && !board[player][x][y - 1] && board[player][x][y - 1] != cur) sum++;
+    if(can(x, y + 2) && !board[player][x][y + 2] && board[player][x][y + 2] != cur) sum++;
   }
-  if (cur == 2)
-  { // Knight
+  if(cur == 2){ // Knight
     int dx[8] = {1, 2, 2, 1, -1, -2, -2, -1};
     int dy[8] = {2, 1, -1, -2, -2, -1, 1, 2};
-    for (int i = 0; i < 8; i++)
-    {
+    for(int i = 0; i < 8; i++){
       int x = px + dx[i], y = py + dy[i];
-      if (can(x, y) && !board[player][x][y])
-        sum++;
+      if(can(x, y) && !board[player][x][y]) sum++;
     }
   }
-  if (cur == 3)
-  { // Rook
+  if(cur == 3){ // Rook
     int dx[4] = {1, -1, 0, 0}, dy[4] = {0, 0, 1, -1};
-    for (int i = 0; i < 4; i++)
-    {
-      while (can(px + dx[i], py + dy[i]))
-      {
-        px += dx[i];
-        py += dy[i];
-        if (!board[player][px][py])
-          sum++;
-        else
-          break;
+    for(int i = 0; i < 4; i++){
+      while(can(px + dx[i], py + dy[i])){
+        px += dx[i]; py += dy[i];
+        if(!board[player][px][py]) sum++;
+        else break;
       }
     }
   }
-  if (cur == 4)
-  { // Bishop
+  if(cur == 4){ // Bishop
     int dx[4] = {1, -1, -1, 1}, dy[4] = {1, 1, -1, -1};
-    for (int i = 0; i < 4; i++)
-    {
-      while (can(px + dx[i], py + dy[i]))
-      {
-        px += dx[i];
-        py += dy[i];
-        if (!board[player][px][py])
-          sum++;
-        else
-          break;
+    for(int i = 0; i < 4; i++){
+      while(can(px + dx[i], py + dy[i])){
+        px += dx[i]; py += dy[i];
+        if(!board[player][px][py]) sum++;
+        else break;
       }
     }
   }
-  if (cur == 5)
-  { // Queen
+  if(cur == 5){ // Queen
     int dx[8] = {1, 1, 1, 0, 0, -1, -1, -1};
     int dy[8] = {1, 0, -1, 1, -1, 1, 0, -1};
-    for (int i = 0; i < 8; i++)
-    {
-      while (can(px + dx[i], py + dy[i]))
-      {
-        px += dx[i];
-        py += dy[i];
-        if (!board[player][px][py])
-          sum++;
-        else
-          break;
+    for(int i = 0; i < 8; i++){
+      while(can(px + dx[i], py + dy[i])){
+        px += dx[i]; py += dy[i];
+        if(!board[player][px][py]) sum++;
+        else break;
       }
     }
   }
   return sum;
 }
 
-int State::evaluate()
-{
+int State::evaluate(){
   // Piece values
   // Pawn, Knight, Bishop, Rook, Queen, King
-  int val[7] = {0, 1, 2, 3, 4, 5, 100000};
-  // 從外面包夾
-  int ctrl[5][5] = {
-      {4, 3, 2, 3, 4},
-      {3, 2, 1, 2, 3},
-      {2, 1, 0, 1, 2},
-      {3, 2, 1, 2, 3},
-      {4, 3, 2, 3, 4}};
-  // 維持步兵防守陣行
-  int ps[5][5] = {
-      {0, 0, 0, 0, 0},
-      {1, 1, 1, 1, 1},
-      {1, 2, 2, 2, 1},
-      {1, 1, 2, 1, 1},
-      {0, 0, 0, 0, 0}};
-  // 確保國王安全
-  int ksafe[5][5] = {
-      {0, 0, 0, 0, 0},
-      {0, 0, 0, 0, 0},
-      {0, 0, 0, 0, 0},
-      {0, 0, 0, 1, 1},
-      {0, 0, 0, 1, 2}};
-
-  int sum = 0;
-  for (int i = 0; i < 5; i++)
-  {
-    for (int j = 0; j < 5; j++)
-    {
+  int val[7] = {0, 100, 320, 330, 500, 900, 100000};
+  int sum = 0 , cnt1 = 0, cnt2 = 0;
+  bool king1 = 0, king2 = 0;
+  
+  for(int i = 0; i < 6; i++){
+    for(int j = 0; j < 5; j++){
       int cur = board.board[0][i][j];
-      if (cur)
-      {
-        if (cur != 6)
-          sum += mobile(i, j, cur, board.board, 0);
+      if(cur){
+        if(cur != 6) sum += mobile(i, j, cur, board.board, 0)*5; // 自由度
+        if(cur == 6) king1 = 1;
         sum += val[cur];
-        sum += ctrl[i][j];
-        if (cur == 1)
-          sum += ps[i][j];
-        if (cur == 6)
-          sum += ksafe[i][j];
+        cnt1++;
       }
       cur = board.board[1][i][j];
-      if (cur)
-      {
-        if (cur != 6)
-          sum -= mobile(i, j, cur, board.board, 1);
+      if(cur){
+        if(cur != 6) sum -= mobile(i, j, cur, board.board, 1)*5;
+        if(cur == 6) king2 = 1;
         sum -= val[cur];
-        sum -= ctrl[i][j];
-        if (cur == 1)
-          sum -= ps[i][j];
-        if (cur == 6)
-          sum -= ksafe[i][j];
+        cnt2++;
+      }
+    }
+  } sum+=(cnt1-cnt2)*10; // 數量優勢
+  /*
+  for(int i = 0; i < 6; i++){
+    for(int j = 0; j < 5; j++){
+      int cur = board.board[0][i][j];
+      if(cur){
+        if(cur == 6) king1 = 1;
+        sum += val[cur];
+      }
+      cur = board.board[1][i][j];
+      if(cur){
+        if(cur == 6) king2 = 1;
+        sum -= val[cur];
       }
     }
   }
+  */
+  if(!king1) sum =  INT_MIN;
+  else if(!king2) sum =  INT_MAX;
 
   return sum;
 }

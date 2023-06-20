@@ -14,10 +14,7 @@
  */
 
 int MiniMax::minimax(State *state, int depth, bool maximizing){
-    if (depth == 0 || state->game_state != UNKNOWN) {
-    return state->evaluate();
-  }
-
+  if (!depth || state->game_state != UNKNOWN) return state->evaluate();
   int ans;
   if(maximizing){
     ans = INT_MIN;
@@ -44,14 +41,15 @@ Move MiniMax::get_move(State *state, int depth){
   auto actions = state->legal_actions;
   int ans = 0, cnt = 0;
   int cmp = !state->player?INT_MIN:INT_MAX; 
-  for(auto& i: actions){
-    auto tmp = state->next_state(i);
-    int val = minimax(tmp, depth, !state->player);
+  for(long unsigned int i = 0; i<actions.size(); i++){
+    auto tmp = state->next_state(actions[i]);
+    int val = minimax(tmp, depth, state->player);
+    delete tmp;
     if(state->player && cmp > val){
-        ans = cnt; cmp =  val;
+        ans = i; cmp =  val; cnt++;
     } else if(!state->player && cmp < val){
-        ans = cnt; cmp =  val;
-    } cnt++;
+        ans = i; cmp =  val; cnt++;
+    }
   }
 
   return actions[ans];
