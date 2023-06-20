@@ -36,9 +36,10 @@ int State::mobile(int px, int py, int cur, char board[2][6][5], int player){
   if(cur == 3){ // Rook
     int dx[4] = {1, -1, 0, 0}, dy[4] = {0, 0, 1, -1};
     for(int i = 0; i < 4; i++){
-      while(can(px + dx[i], py + dy[i])){
-        px += dx[i]; py += dy[i];
-        if(!board[player][px][py]) sum++;
+      int x = px, y = py;
+      while(can(x + dx[i], y + dy[i])){
+        x += dx[i]; y += dy[i];
+        if(!board[player][x][y]) sum++;
         else break;
       }
     }
@@ -46,9 +47,10 @@ int State::mobile(int px, int py, int cur, char board[2][6][5], int player){
   if(cur == 4){ // Bishop
     int dx[4] = {1, -1, -1, 1}, dy[4] = {1, 1, -1, -1};
     for(int i = 0; i < 4; i++){
-      while(can(px + dx[i], py + dy[i])){
-        px += dx[i]; py += dy[i];
-        if(!board[player][px][py]) sum++;
+      int x = px, y = py;
+      while(can(x + dx[i], y + dy[i])){
+        x += dx[i]; y += dy[i];
+        if(!board[player][x][y]) sum++;
         else break;
       }
     }
@@ -57,9 +59,10 @@ int State::mobile(int px, int py, int cur, char board[2][6][5], int player){
     int dx[8] = {1, 1, 1, 0, 0, -1, -1, -1};
     int dy[8] = {1, 0, -1, 1, -1, 1, 0, -1};
     for(int i = 0; i < 8; i++){
-      while(can(px + dx[i], py + dy[i])){
-        px += dx[i]; py += dy[i];
-        if(!board[player][px][py]) sum++;
+      int x = px, y = py;
+      while(can(x + dx[i], y + dy[i])){
+        x += dx[i]; y += dy[i];
+        if(!board[player][x][y]) sum++;
         else break;
       }
     }
@@ -67,47 +70,96 @@ int State::mobile(int px, int py, int cur, char board[2][6][5], int player){
   return sum;
 }
 
+bool State::atob(int fx, int fy, int tx, int ty, int p){
+  if(abs(p) == 1){ // pawn
+    if(tx != fx-1 && p == 1) return 0;
+    if(tx != fx+1 && p == -1) return 0;
+    if(ty != fy-1 && ty != fy+1) return 0;
+    return 1;
+  }
+  else if(abs(p) == 2){ // Knight
+    int dx[8] = {1, 2, 2, 1, -1, -2, -2, -1};
+    int dy[8] = {2, 1, -1, -2, -2, -1, 1, 2};
+    for(int i = 0; i < 8; i++){
+      int x = fx + dx[i], y = fy + dy[i];
+      if(x == tx && y == ty) return 1;
+    } return 0;
+  }
+  else if(abs(p) == 3){ // rook
+    int dx[4] = {1, -1, 0, 0}, dy[4] = {0, 0, 1, -1};
+    for(int i = 0; i < 4; i++){
+      int x = fx, y = fy;
+      while(can(x + dx[i], y + dy[i])){
+        x += dx[i]; y += dy[i];
+        if(x == tx && y == ty) return 1;
+      }
+    } return 0;
+  }
+  else if(abs(p) == 4){ // bishop
+  int dx[4] = {1, -1, -1, 1}, dy[4] = {1, 1, -1, -1};
+    for(int i = 0; i < 4; i++){
+      int x = fx, y = fy;
+      while(can(x + dx[i], y + dy[i])){
+        x += dx[i]; y += dy[i];
+        if(x == tx && y == ty) return 1;
+      }
+    } return 0;
+  }
+  else if(abs(p) == 5){ // queen
+  int dx[8] = {1, 1, 1, 0, 0, -1, -1, -1};
+  int dy[8] = {1, 0, -1, 1, -1, 1, 0, -1};
+    for(int i = 0; i < 8; i++){
+      int x = fx, y = fy;
+      while(can(x + dx[i], y + dy[i])){
+        x += dx[i]; y += dy[i];
+        if(x == tx && y == ty) return 1;
+      }
+    } return 0;
+  } return 0;
+}
+
+int State::threat(int x, int y, int cur, int op){
+  int t[6] = {0, 25, 100, 150, 200, 500}, cnt = 0;
+  for(int i = 0; i<6; i++){
+    for(int j = 0; j<5; j++){
+      int tmp = board.board[op][i][j];
+      if(atob(i, j, x, y, op?-tmp:tmp)){
+        if(cur == 6) return INT_MAX;
+        cnt++;
+      }
+    }
+  } return cnt*t[cur];
+}
+
 int State::evaluate(){
   // Piece values
   // Pawn, Knight, Bishop, Rook, Queen, King
-  int val[7] = {0, 100, 320, 330, 500, 900, 100000};
+  int val[7] = {0, 100, 320, 330, 500, 900, 5000};
   int sum = 0 , cnt1 = 0, cnt2 = 0;
   bool king1 = 0, king2 = 0;
-  
+
   for(int i = 0; i < 6; i++){
     for(int j = 0; j < 5; j++){
       int cur = board.board[0][i][j];
       if(cur){
         if(cur != 6) sum += mobile(i, j, cur, board.board, 0)*5; // 自由度
         if(cur == 6) king1 = 1;
-        sum += val[cur];
-        cnt1++;
+        // int tmp = threat(i, j, cur, 1);
+        // if(tmp == INT_MAX) return INT_MIN;
+        // sum -= tmp; 
+        sum += val[cur]; cnt1++;
       }
       cur = board.board[1][i][j];
       if(cur){
         if(cur != 6) sum -= mobile(i, j, cur, board.board, 1)*5;
         if(cur == 6) king2 = 1;
-        sum -= val[cur];
-        cnt2++;
+        // int tmp = threat(i, j, cur, 0);
+        // if(tmp == INT_MAX) return tmp;
+        // sum += tmp; 
+        sum -= val[cur]; cnt2++;
       }
     }
   } sum+=(cnt1-cnt2)*10; // 數量優勢
-  /*
-  for(int i = 0; i < 6; i++){
-    for(int j = 0; j < 5; j++){
-      int cur = board.board[0][i][j];
-      if(cur){
-        if(cur == 6) king1 = 1;
-        sum += val[cur];
-      }
-      cur = board.board[1][i][j];
-      if(cur){
-        if(cur == 6) king2 = 1;
-        sum -= val[cur];
-      }
-    }
-  }
-  */
   if(!king1) sum =  INT_MIN;
   else if(!king2) sum =  INT_MAX;
 
